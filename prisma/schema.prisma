@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Ticket {
+  id              String      @id @default(cuid())
+  customerName    String      @default("Customer")
+  category        String
+  priority        String      @default("Med")
+  sentiment       String      @default("Neutral")
+  status          String      @default("Open") // Open, In Progress, Resolved, Escalated, Closed
+  confidence      Float       @default(0.9)
+  assignedAgentId String?
+  assignedAgent   Agent?      @relation(fields: [assignedAgentId], references: [id])
+  summary         String?
+  rating          Int?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  resolvedAt      DateTime?
+  messages        Message[]
+  callbacks       Callback[]
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Message {
+  id                String   @id @default(cuid())
+  ticketId          String
+  ticket            Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  role              String   // customer, ai, agent, system
+  text              String
+  sourceArticleIds  String[] @default([])
+  verified          Boolean  @default(true)
+  verificationNotes String?
+  createdAt         DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+model KbArticle {
+  id        String   @id @default(cuid())
+  title     String
+  category  String
+  content   String
+  keywords  String[] @default([])
+  approved  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([approved])
+}
+
+model Agent {
+  id         String   @id
+  name       String
+  role       String
+  specialty  String
+  status     String   @default("available") // available, busy, offline
+  shiftStart String   // "09:00"
+  shiftEnd   String   // "18:00"
+  phone      String
+  email      String
+  whatsapp   String
+  image      String
+  bio        String?
+  tickets    Ticket[]
+
+  @@index([specialty, status])
+}
+
+model Callback {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  name      String
+  contact   String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model RateLimit {
+  key         String   @id
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@index([windowStart])
+}
+
+model EventLog {
+  id        String   @id @default(cuid())
+  type      String   // verification_failed, fallback_used, escalation, pii_masked, prompt_injection, rate_limit
+  ticketId  String?
+  details   String
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([ticketId])
+}
+
+
