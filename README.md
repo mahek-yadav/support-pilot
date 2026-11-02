@@ -2,8 +2,8 @@
 
 A visually stunning, animation-rich AI customer support platform built with Next.js 14 App Router, Google Gemini multi-turn conversational AI, Supabase PostgreSQL via Prisma ORM, and physics-driven 3D UI components.
 
-Live link : support-pilot-six.vercel.app
 ---
+Live link : support-pilot-six.vercel.app
 
 ## Architecture Overview
 
